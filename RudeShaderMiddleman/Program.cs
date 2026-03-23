@@ -846,12 +846,7 @@ namespace RudeShaderMiddleman
 			Write(output, stringBuff, 0, stringBuff.Length);
 		}
 
-		private static Regex includesRegex = new Regex(@"^includes:\s?(\d+)$");
-		private static Regex filepathsRegex = new Regex(@"^filepaths:\s?(\d+)$");
-
-		private static Regex keywordsRegex = new Regex("^keywordsUser(Global|Local|Builtin): (\\d+) (\\d+) (\\d+)$");
-		private static Regex keywordsEndRegex = new Regex("^keywordsEnd: (\\d+)$");
-		private static Regex passNameRegex = new Regex("^<Unnamed Pass (\\d+)>$");
+		private static Regex passNameRegex = new Regex(@"^<Unnamed Pass (\d+)>$");
 
 		private static void InterceptTask()
 		{
@@ -963,52 +958,7 @@ namespace RudeShaderMiddleman
 								if (line.StartsWith("shader:"))
 									break;
 
-								Match match;
-
-								match = includesRegex.Match(Encoding.UTF8.GetString(buff, 0, readBytes));
-								if (match.Success)
-								{
-									cnt = int.Parse(match.Groups[1].Value);
-									for (int i = 0; i < cnt; i++)
-									{
-										readBytes = ReadString(compilerPipeStream, unityPipeStream);
-										line = Encoding.UTF8.GetString(buff, 0, readBytes);
-										middlemanOutputLog.WriteLine(line);
-									}
-
-									continue;
-								}
-
-								match = filepathsRegex.Match(line);
-								if (match.Success)
-								{
-									cnt = int.Parse(match.Groups[1].Value);
-									for (int i = 0; i < cnt; i++)
-									{
-										readBytes = ReadString(compilerPipeStream, unityPipeStream);
-										line = Encoding.UTF8.GetString(buff, 0, readBytes);
-										middlemanOutputLog.WriteLine(line);
-									}
-
-									continue;
-								}
-
-								match = keywordsRegex.Match(line);
-								if (match.Success)
-								{
-									cnt = int.Parse(match.Groups[3].Value);
-									for (int i = 0; i < cnt; i++)
-									{
-										readBytes = ReadString(compilerPipeStream, unityPipeStream);
-										line = Encoding.UTF8.GetString(buff, 0, readBytes);
-										middlemanOutputLog.WriteLine(line);
-									}
-
-									continue;
-								}
-
-								match = keywordsEndRegex.Match(line);
-								if (match.Success)
+								if (line.StartsWith("keywordsEnd:"))
 								{
 									readBytes = ReadString(compilerPipeStream, unityPipeStream, true);
 									readBytes = ReadString(compilerPipeStream, unityPipeStream, true);
