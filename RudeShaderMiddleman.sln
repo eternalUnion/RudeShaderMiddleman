@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36930.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RudeShaderMiddleman", "RudeShaderMiddleman\RudeShaderMiddleman.csproj", "{F23E9E91-BA21-48F1-8321-3699861EB35D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NamedPipeLister", "NamedPipeLister\NamedPipeLister.csproj", "{02CAF0DB-03D3-4EC1-AB9F-5C0965F22421}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnityShaderCompilerListener", "UnityShaderCompilerListener\UnityShaderCompilerListener.csproj", "{092AB04A-33E8-42B1-A678-725276B8167C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F23E9E91-BA21-48F1-8321-3699861EB35D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F23E9E91-BA21-48F1-8321-3699861EB35D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F23E9E91-BA21-48F1-8321-3699861EB35D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F23E9E91-BA21-48F1-8321-3699861EB35D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{02CAF0DB-03D3-4EC1-AB9F-5C0965F22421}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{02CAF0DB-03D3-4EC1-AB9F-5C0965F22421}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{02CAF0DB-03D3-4EC1-AB9F-5C0965F22421}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{02CAF0DB-03D3-4EC1-AB9F-5C0965F22421}.Release|Any CPU.Build.0 = Release|Any CPU
+		{092AB04A-33E8-42B1-A678-725276B8167C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{092AB04A-33E8-42B1-A678-725276B8167C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{092AB04A-33E8-42B1-A678-725276B8167C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{092AB04A-33E8-42B1-A678-725276B8167C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {DEDC0E04-DE2A-4B3F-85B2-01EE9A2BFE5B}
+	EndGlobalSection
+EndGlobal
