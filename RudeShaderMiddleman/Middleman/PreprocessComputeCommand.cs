@@ -37,7 +37,7 @@ namespace RudeShaderMiddleman.Middleman
 			{
 				readBytes = ReadString(compilerPipeStream, unityPipeStream);
 				string line = Encoding.UTF8.GetString(buff, 0, readBytes);
-				middlemanOutputLog.WriteLine(line);
+				Log(line, LogLevel.DEBUG);
 
 				if (line.StartsWith("endKernels:"))
 				{

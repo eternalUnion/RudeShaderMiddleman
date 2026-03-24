@@ -16,7 +16,6 @@ namespace RudeShaderMiddleman.Middleman
 			for (int i = 0; i < cnt; i++)
 			{
 				readBytes = ReadString(unityPipeStream, compilerPipeStream);
-				middlemanOutputLog.WriteLine($"Received parameter: {Encoding.UTF8.GetString(buff, 0, readBytes)}");
 			}
 
 			// Second message
@@ -25,7 +24,6 @@ namespace RudeShaderMiddleman.Middleman
 			for (int i = 0; i < cnt * 2; i++)
 			{
 				readBytes = ReadString(unityPipeStream, compilerPipeStream);
-				middlemanOutputLog.WriteLine($"Received parameter: {Encoding.UTF8.GetString(buff, 0, readBytes)}");
 			}
 
 			// Terminate

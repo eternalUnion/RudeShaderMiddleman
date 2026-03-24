@@ -18,7 +18,7 @@ namespace RudeShaderMiddleman.Middleman
 			foreach (var binding in variantEntry.inputBindings.OrderBy(b => b.Source))
 			{
 				WriteString(unityPipeStream, $"input: {binding.Source} {(int)binding.Target}");
-				middlemanOutputLog.WriteLine($"Binding = input: {binding.Source} {(int)binding.Target}");
+				Log($"Binding = input: {binding.Source} {(int)binding.Target}", LogLevel.DEBUG);
 			}
 
 			ShaderParameters commonParams = isVertexShader ? passEntry.vertexCommonParameters : passEntry.fragmentCommonParameters;
@@ -38,15 +38,15 @@ namespace RudeShaderMiddleman.Middleman
 					parameters.AddRange(partialCb.CBParams);
 
 				WriteString(unityPipeStream, $"cb: {cb.Name} {cb.UsedSize} {parameters.Count}");
-				middlemanOutputLog.WriteLine($"Binding = cb: {cb.Name} {cb.UsedSize} {parameters.Count}");
+				Log($"Binding = cb: {cb.Name} {cb.UsedSize} {parameters.Count}", LogLevel.DEBUG);
 
 				foreach (var param in parameters.OrderBy(p => p.Index))
 				{
 					WriteString(unityPipeStream, $"const: {param.ParamName} {param.Index} 0 {(param.IsMatrix ? 1 : 0)} {param.Rows} {param.Columns} {param.ArraySize}");
-					middlemanOutputLog.WriteLine($"Binding = const: {param.ParamName} {param.Index} 0 {(param.IsMatrix ? 1 : 0)} {param.Rows} {param.Columns} {param.ArraySize}");
+					Log($"Binding = const: {param.ParamName} {param.Index} 0 {(param.IsMatrix ? 1 : 0)} {param.Rows} {param.Columns} {param.ArraySize}", LogLevel.DEBUG);
 				}
 
-				middlemanOutputLog.WriteLine($"Struct param count: {cb.StructParams.Count} : {(partialCb == null ? -1 : partialCb.StructParams.Count)}");
+				Log($"Struct param count: {cb.StructParams.Count} : {(partialCb == null ? -1 : partialCb.StructParams.Count)}", LogLevel.DEBUG);
 			}
 
 			List<ConstantBufferBinding> cbBindings = new List<ConstantBufferBinding>(variantEntry.parameters.ConstBindings);
@@ -55,7 +55,7 @@ namespace RudeShaderMiddleman.Middleman
 			foreach (var cbBinding in cbBindings.OrderBy(b => b.Index))
 			{
 				WriteString(unityPipeStream, $"cbbind: {cbBinding.Name} {cbBinding.Index}");
-				middlemanOutputLog.WriteLine($"Binding = cbbind: {cbBinding.Name} {cbBinding.Index}");
+				Log($"Binding = cbbind: {cbBinding.Name} {cbBinding.Index}", LogLevel.DEBUG);
 			}
 
 			List<TextureParameter> textures = new List<TextureParameter>(variantEntry.parameters.TextureParameters);
@@ -64,7 +64,7 @@ namespace RudeShaderMiddleman.Middleman
 			foreach (var tex in textures.OrderBy(t => t.Index))
 			{
 				WriteString(unityPipeStream, $"texbind: {tex.Name} {tex.Index} {tex.SamplerIndex} {(tex.MultiSampled ? 1 : 0)} {tex.Dim}");
-				middlemanOutputLog.WriteLine($"Binding = texbind: {tex.Name} {tex.Index} {tex.SamplerIndex} {(tex.MultiSampled ? 1 : 0)} {tex.Dim}");
+				Log($"Binding = texbind: {tex.Name} {tex.Index} {tex.SamplerIndex} {(tex.MultiSampled ? 1 : 0)} {tex.Dim}", LogLevel.DEBUG);
 			}
 
 			List<ConstantBufferBinding> buffers = new List<ConstantBufferBinding>(variantEntry.parameters.Buffers);
@@ -73,7 +73,7 @@ namespace RudeShaderMiddleman.Middleman
 			foreach (var buff in buffers.OrderBy(buff => buff.Index))
 			{
 				WriteString(unityPipeStream, $"bufferbind: {buff.Name} {buff.Index} {buff.ArraySize}");
-				middlemanOutputLog.WriteLine($"Binding = bufferbind: {buff.Name} {buff.Index} {buff.ArraySize}");
+				Log($"Binding = bufferbind: {buff.Name} {buff.Index} {buff.ArraySize}", LogLevel.DEBUG);
 			}
 
 			List<SamplerParameter> samplers = new List<SamplerParameter>(variantEntry.parameters.Samplers);
@@ -82,11 +82,11 @@ namespace RudeShaderMiddleman.Middleman
 			foreach (var sampler in samplers.OrderBy(s => s.BindPoint))
 			{
 				WriteString(unityPipeStream, $"sampler: {sampler.Sampler} {sampler.BindPoint}");
-				middlemanOutputLog.WriteLine($"Binding = sampler: {sampler.Sampler} {sampler.BindPoint}");
+				Log($"Binding = sampler: {sampler.Sampler} {sampler.BindPoint}", LogLevel.DEBUG);
 			}
 
 			WriteString(unityPipeStream, $"stats: {variantEntry.statsAlu} {variantEntry.statsTex} {variantEntry.statsFlow} {variantEntry.statsTempRegister}");
-			middlemanOutputLog.WriteLine($"Binding = stats: {variantEntry.statsAlu} {variantEntry.statsTex} {variantEntry.statsFlow} {variantEntry.statsTempRegister}");
+			Log($"Binding = stats: {variantEntry.statsAlu} {variantEntry.statsTex} {variantEntry.statsFlow} {variantEntry.statsTempRegister}", LogLevel.DEBUG);
 		}
 
 		private void CompileSnippet()
@@ -96,18 +96,19 @@ namespace RudeShaderMiddleman.Middleman
 			int cnt;
 
 			// Processed shader code
-			middlemanOutputLog.WriteLine("compileSnippet: Shader code");
+			Log("Shader code", LogLevel.DEBUG);
 			readBytes = ReadString(unityPipeStream, compilerPipeStream);
 
 			// Shader file directory
-			middlemanOutputLog.WriteLine("compileSnippet: Shader directory");
+			Log("Shader directory", LogLevel.DEBUG);
 			readBytes = ReadString(unityPipeStream, compilerPipeStream);
 			string shaderDir = Encoding.UTF8.GetString(buff, 0, readBytes);
 
 			// Shader file name
-			middlemanOutputLog.WriteLine("compileSnippet: Shader file");
+			Log("Shader file", LogLevel.DEBUG);
 			readBytes = ReadString(unityPipeStream, compilerPipeStream);
 			string shaderFileName = Encoding.UTF8.GetString(buff, 0, readBytes);
+			Log($"Compiling {shaderDir}/{shaderFileName}");
 
 			// Get guid from the file
 			string metaPath = Path.Combine(shaderDir, shaderFileName + ".meta");
@@ -123,27 +124,28 @@ namespace RudeShaderMiddleman.Middleman
 				if (guidIndex != -1)
 				{
 					guid = metaContens.Substring(guidIndex + "guid: ".Length, 32);
-					middlemanOutputLog.WriteLine($"compileSnippet: Derived shader guid = '{guid}'");
+					Log($"Derived shader guid = '{guid}'", LogLevel.DEBUG);
 				}
 			}
 			else
 			{
-				middlemanOutputLog.WriteLine($"compileSnippet: Could not locate meta file at '{metaPath}'");
+				Log($"Could not locate meta file at '{metaPath}'");
 			}
 
 			// Pass name
-			middlemanOutputLog.WriteLine("compileSnippet: Shader pass");
+			Log("Shader pass", LogLevel.DEBUG);
 			readBytes = ReadString(unityPipeStream, compilerPipeStream);
 			string passName = Encoding.UTF8.GetString(buff, 0, readBytes);
+			Log($"Pass name: '{passName}'", LogLevel.DEBUG);
 
-			middlemanOutputLog.WriteLine("compileSnippet: 4 unknown");
+			Log("4 unknown", LogLevel.DEBUG);
 			ReadHeader(unityPipeStream, compilerPipeStream, false);
 			ReadHeader(unityPipeStream, compilerPipeStream, false);
 			ReadHeader(unityPipeStream, compilerPipeStream, false);
 			ReadHeader(unityPipeStream, compilerPipeStream, false);
 
 			// ??? Keywords
-			middlemanOutputLog.WriteLine("compileSnippet: Unknown keyword array");
+			Log("Unknown keyword array", LogLevel.DEBUG);
 			header = ReadHeader(unityPipeStream, compilerPipeStream, false);
 			cnt = header.first;
 
@@ -153,7 +155,7 @@ namespace RudeShaderMiddleman.Middleman
 			}
 
 			// Enabled shader keywords
-			middlemanOutputLog.WriteLine("compileSnippet: Enabled keywords");
+			Log("Enabled keywords", LogLevel.DEBUG);
 			header = ReadHeader(unityPipeStream, compilerPipeStream, false);
 			cnt = header.first;
 
@@ -164,10 +166,10 @@ namespace RudeShaderMiddleman.Middleman
 				enabledKeywords.Add(Encoding.UTF8.GetString(buff, 0, readBytes));
 			}
 
-			middlemanOutputLog.WriteLine($"compileSnippet: Enabled keywords = {string.Join(" ", enabledKeywords)}");
+			Log($"Enabled keywords = {string.Join(" ", enabledKeywords)}", LogLevel.DEBUG);
 
 			// Disabled shader keywords
-			middlemanOutputLog.WriteLine("compileSnippet: Disabled keywords");
+			Log("Disabled keywords", LogLevel.DEBUG);
 			header = ReadHeader(unityPipeStream, compilerPipeStream, false);
 			cnt = header.first;
 
@@ -178,9 +180,9 @@ namespace RudeShaderMiddleman.Middleman
 				disabledKeywords.Add(Encoding.UTF8.GetString(buff, 0, readBytes));
 			}
 
-			middlemanOutputLog.WriteLine($"compileSnippet: Disabled keywords = {string.Join(" ", disabledKeywords)}");
+			Log($"Disabled keywords = {string.Join(" ", disabledKeywords)}", LogLevel.DEBUG);
 
-			middlemanOutputLog.WriteLine("compileSnippet: reading compiler output");
+			Log("reading compiler output", LogLevel.DEBUG);
 			ReadHeader(unityPipeStream, compilerPipeStream, false);
 
 			// flags=0
@@ -190,11 +192,11 @@ namespace RudeShaderMiddleman.Middleman
 			// type=Vertex|Fragment
 			header = ReadHeader(unityPipeStream, compilerPipeStream, false);
 			bool vertexShader = header.first == 0;
-			middlemanOutputLog.WriteLine($"Shader type: {(vertexShader ? "Vertex" : "Fragment")}");
+			Log($"Shader type: {(vertexShader ? "Vertex" : "Fragment")}");
 			// platform= d3d11 | glcore | vulkan
 			header = ReadHeader(unityPipeStream, compilerPipeStream, false);
 			GPUPlatform platform = (GPUPlatform)header.first;
-			middlemanOutputLog.WriteLine($"GPU platform: {platform}");
+			Log($"GPU platform: {platform}");
 			// reqs=4075 (?)
 			ReadHeader(unityPipeStream, compilerPipeStream, true);
 			// mask=6
@@ -206,10 +208,10 @@ namespace RudeShaderMiddleman.Middleman
 
 			Match passNameMatch = passNameRegex.Match(passName);
 			if (!passNameMatch.Success)
-				middlemanOutputLog.WriteLine($"Invalid pass name: {passName}");
+				Log($"Invalid pass name: {passName}");
 
 			if (platform != GPUPlatform.d3d11)
-				middlemanOutputLog.WriteLine($"Warning: platform is not {GPUPlatform.d3d11}, will not inject ULTRAKILL shader");
+				Log($"Warning: platform is not {GPUPlatform.d3d11}, will not inject ULTRAKILL shader");
 
 			// Injection
 			if (passNameMatch.Success && guid != null && shaders.TryGetValue(guid, out ShaderEntry entry) && platform == GPUPlatform.d3d11)
@@ -217,11 +219,11 @@ namespace RudeShaderMiddleman.Middleman
 				int passNum = int.Parse(passNameMatch.Groups[1].Value);
 				ShaderPass passEntry = entry.shaderPasses.Where(p => p.passNum == passNum).FirstOrDefault();
 
-				middlemanOutputLog.WriteLine($"Shader found in the table. Attempting to find suitable variant");
+				Log($"Shader found in the table. Attempting to find suitable variant...");
 
 				if (passEntry == null)
 				{
-					middlemanOutputLog.WriteLine($"Shader pass not found");
+					Log($"Shader pass not found");
 				}
 				else
 				{
@@ -245,7 +247,7 @@ namespace RudeShaderMiddleman.Middleman
 						if (matchedVariant == null)
 						{
 							matchedVariant = passEntry.vertexVariants.Last();
-							middlemanOutputLog.WriteLine($"Fallback variant");
+							Log($"Using fallback variant");
 						}
 					}
 					else
@@ -255,14 +257,14 @@ namespace RudeShaderMiddleman.Middleman
 						if (matchedVariant == null)
 						{
 							matchedVariant = passEntry.fragmentVariants.Last();
-							middlemanOutputLog.WriteLine($"Fallback variant");
+							Log($"Using fallback variant");
 						}
 					}
 
 					ZipArchiveEntry blob = blobs.GetEntry($"{guid}/{matchedVariant.offset}");
 					if (blob == null)
 					{
-						middlemanOutputLog.WriteLine("Could not locate blob entry");
+						Log("Could not locate blob entry");
 					}
 					else
 					{
@@ -273,7 +275,7 @@ namespace RudeShaderMiddleman.Middleman
 						{
 							readBytes = ReadString(compilerPipeStream, unityPipeStream, false);
 							string binding = Encoding.UTF8.GetString(buff, 0, readBytes);
-							middlemanOutputLog.WriteLine($"(SKIP) compileSnippet: Binding = '{binding}'");
+							Log($"(SKIP) Binding = '{binding}'", LogLevel.DEBUG);
 
 							if (Encoding.UTF8.GetString(buff, 0, readBytes).StartsWith("shader: "))
 							{
@@ -283,7 +285,7 @@ namespace RudeShaderMiddleman.Middleman
 
 						header = ReadHeader(compilerPipeStream, unityPipeStream, false, false);
 
-						middlemanOutputLog.WriteLine("(SKIP) compileSnippet: Shader bytecode");
+						Log("(SKIP) Shader bytecode", LogLevel.DEBUG);
 						readBytes = ReadString(compilerPipeStream, unityPipeStream, false);
 
 						// Inject shader
@@ -307,7 +309,7 @@ namespace RudeShaderMiddleman.Middleman
 				{
 					readBytes = ReadString(compilerPipeStream, unityPipeStream);
 					string binding = Encoding.UTF8.GetString(buff, 0, readBytes);
-					middlemanOutputLog.WriteLine($"compileSnippet:  Binding = '{binding}'");
+					Log($" Binding = '{binding}'", LogLevel.DEBUG);
 
 					if (Encoding.UTF8.GetString(buff, 0, readBytes).StartsWith("shader: "))
 					{
@@ -317,7 +319,7 @@ namespace RudeShaderMiddleman.Middleman
 
 				header = ReadHeader(compilerPipeStream, unityPipeStream, false);
 
-				middlemanOutputLog.WriteLine("compileSnippet: Shader bytecode");
+				Log("Shader bytecode", LogLevel.DEBUG);
 				readBytes = ReadString(compilerPipeStream, unityPipeStream);
 			}
 		}

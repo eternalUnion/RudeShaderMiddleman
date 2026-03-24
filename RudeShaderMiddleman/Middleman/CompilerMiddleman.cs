@@ -16,6 +16,31 @@ namespace RudeShaderMiddleman.Middleman
 		private readonly Dictionary<string, ShaderEntry> shaders;
 		private readonly ZipArchive blobs;
 
+		enum LogLevel
+		{
+			DEBUG,
+			INFO,
+		}
+
+		private string logPrefix = "";
+		private void Log(string text, LogLevel logLevel = LogLevel.INFO)
+		{
+			switch(logLevel)
+			{
+				case LogLevel.DEBUG:
+#if DEBUG
+					middlemanOutputLog.Write(logPrefix);
+					middlemanOutputLog.WriteLine(text);
+#endif
+					break;
+
+				case LogLevel.INFO:
+					middlemanOutputLog.Write(logPrefix);
+					middlemanOutputLog.WriteLine(text);
+					break;
+			}
+		}
+
 		struct Header
 		{
 			public int first;
@@ -85,30 +110,37 @@ namespace RudeShaderMiddleman.Middleman
 					switch (command)
 					{
 						case "c:initializeCompiler":
+							logPrefix = "    initializeCompiler: ";
 							InitializeCompiler();
 							break;
 
 						case "c:preprocess":
+							logPrefix = "    preprocess: ";
 							Preprocess();
 							break;
 
 						case "c:compileSnippet":
+							logPrefix = "    compileSnippet: ";
 							CompileSnippet();
 							break;
 
 						case "c:preprocessCompute":
+							logPrefix = "    preprocessCompute: ";
 							PreprocessCompute();
 							break;
 
 						case "c:compileComputeKernel":
+							logPrefix = "    compileComputeKernel: ";
 							CompilerComputeKernelCommand();
 							break;
 
 						case "c:disassembleShader":
+							logPrefix = "    disassembleShader: ";
 							DisassembleShader();
 							break;
 
 						case "c:shutdown":
+							logPrefix = "    shutdown: ";
 							Shutdown();
 							break;
 
@@ -116,6 +148,8 @@ namespace RudeShaderMiddleman.Middleman
 							middlemanOutputLog.WriteLine($"Unknown command: {command}");
 							throw new Exception($"Unknown command: {command}");
 					}
+
+					logPrefix = "";
 				}
 			}
 			catch (Exception e)
