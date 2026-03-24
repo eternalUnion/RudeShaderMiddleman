@@ -121,6 +121,7 @@
     <Compile Include="Metadata\UAVParameter.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ShaderTable\Enums\GPUPlatform.cs" />
     <Compile Include="ShaderTable\ShaderEntry.cs" />
     <Compile Include="ShaderTable\ShaderPass.cs" />
     <Compile Include="ShaderTable\Enums\ShaderGpuProgramType.cs" />

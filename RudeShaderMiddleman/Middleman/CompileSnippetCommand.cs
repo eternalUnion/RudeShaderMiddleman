@@ -1,4 +1,5 @@
 ﻿using RudeShaderMiddleman.Metadata;
+using RudeShaderMiddleman.ShaderTable.Enums;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -184,14 +185,16 @@ namespace RudeShaderMiddleman.Middleman
 
 			// flags=0
 			ReadHeader(unityPipeStream, compilerPipeStream, true);
-			// lang=0
+			// lang=3
 			ReadHeader(unityPipeStream, compilerPipeStream, false);
 			// type=Vertex|Fragment
 			header = ReadHeader(unityPipeStream, compilerPipeStream, false);
 			bool vertexShader = header.first == 0;
 			middlemanOutputLog.WriteLine($"Shader type: {(vertexShader ? "Vertex" : "Fragment")}");
-			// platform=BuildStandaloneWin64Player (19)
-			ReadHeader(unityPipeStream, compilerPipeStream, false);
+			// platform= d3d11 | glcore | vulkan
+			header = ReadHeader(unityPipeStream, compilerPipeStream, false);
+			GPUPlatform platform = (GPUPlatform)header.first;
+			middlemanOutputLog.WriteLine($"GPU platform: {platform}");
 			// reqs=4075 (?)
 			ReadHeader(unityPipeStream, compilerPipeStream, true);
 			// mask=6
@@ -201,12 +204,15 @@ namespace RudeShaderMiddleman.Middleman
 
 			bool shaderReplaced = false;
 
-			// Injection
 			Match passNameMatch = passNameRegex.Match(passName);
 			if (!passNameMatch.Success)
 				middlemanOutputLog.WriteLine($"Invalid pass name: {passName}");
 
-			if (passNameMatch.Success && guid != null && shaders.TryGetValue(guid, out ShaderEntry entry))
+			if (platform != GPUPlatform.d3d11)
+				middlemanOutputLog.WriteLine($"Warning: platform is not {GPUPlatform.d3d11}, will not inject ULTRAKILL shader");
+
+			// Injection
+			if (passNameMatch.Success && guid != null && shaders.TryGetValue(guid, out ShaderEntry entry) && platform == GPUPlatform.d3d11)
 			{
 				int passNum = int.Parse(passNameMatch.Groups[1].Value);
 				ShaderPass passEntry = entry.shaderPasses.Where(p => p.passNum == passNum).FirstOrDefault();
