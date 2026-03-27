@@ -1,13 +1,8 @@
-﻿
-using RudeShadermiddleman.Common.Middleman;
-using RudeShadermiddleman.Common.ShaderTable;
+﻿using RudeShaderMiddleman.Common.Middleman;
+using RudeShaderMiddleman.Common.ShaderTable;
 using System.Diagnostics;
 using System.IO.Compression;
 using System.IO.Pipes;
-using System.Net;
-using System.Net.Sockets;
-using System.Reflection;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace RudeShaderMiddleman.DotnetCore;
