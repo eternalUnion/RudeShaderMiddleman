@@ -1,4 +1,4 @@
-﻿namespace RudeShadermiddlemanCommon.ShaderTable.Enums
+﻿namespace RudeShadermiddleman.Common.ShaderTable.Enums
 {
 	public enum ShaderGpuProgramType
 	{

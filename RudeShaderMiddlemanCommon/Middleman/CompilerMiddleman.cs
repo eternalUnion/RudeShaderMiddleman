@@ -1,11 +1,11 @@
-﻿using RudeShadermiddlemanCommon.ShaderTable;
+﻿using RudeShadermiddleman.Common.ShaderTable;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Text;
 
-namespace RudeShadermiddlemanCommon.Middleman
+namespace RudeShadermiddleman.Common.Middleman
 {
 	public partial class CompilerMiddleman
 	{

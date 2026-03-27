@@ -1,4 +1,4 @@
-﻿namespace RudeShadermiddlemanCommon.Metadata
+﻿namespace RudeShadermiddleman.Common.Metadata
 {
     public enum ShaderParamType
     {

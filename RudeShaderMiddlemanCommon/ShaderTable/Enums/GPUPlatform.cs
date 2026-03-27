@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RudeShadermiddlemanCommon.ShaderTable.Enums
+namespace RudeShadermiddleman.Common.ShaderTable.Enums
 {
 	public enum GPUPlatform
 	{

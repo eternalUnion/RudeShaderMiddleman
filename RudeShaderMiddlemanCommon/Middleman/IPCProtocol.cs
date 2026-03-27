@@ -4,7 +4,7 @@ using System.IO.Pipes;
 using System.Linq;
 using System.Text;
 
-namespace RudeShadermiddlemanCommon.Middleman
+namespace RudeShadermiddleman.Common.Middleman
 {
 	public partial class CompilerMiddleman
 	{

@@ -1,8 +1,8 @@
-﻿using RudeShadermiddlemanCommon.Metadata;
+﻿using RudeShadermiddleman.Common.Metadata;
 using System.Collections.Generic;
 using System.IO;
 
-namespace RudeShadermiddlemanCommon.ShaderTable
+namespace RudeShadermiddleman.Common.ShaderTable
 {
 	public class VariantEntry
 	{

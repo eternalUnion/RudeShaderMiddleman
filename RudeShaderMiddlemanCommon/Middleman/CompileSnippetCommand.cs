@@ -1,6 +1,6 @@
-﻿using RudeShadermiddlemanCommon.Metadata;
-using RudeShadermiddlemanCommon.ShaderTable;
-using RudeShadermiddlemanCommon.ShaderTable.Enums;
+﻿using RudeShadermiddleman.Common.Metadata;
+using RudeShadermiddleman.Common.ShaderTable;
+using RudeShadermiddleman.Common.ShaderTable.Enums;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace RudeShadermiddlemanCommon.Middleman
+namespace RudeShadermiddleman.Common.Middleman
 {
 	public partial class CompilerMiddleman
 	{

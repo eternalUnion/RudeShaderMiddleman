@@ -1,5 +1,5 @@
-﻿using RudeShadermiddlemanCommon.Middleman;
-using RudeShadermiddlemanCommon.ShaderTable;
+﻿using RudeShadermiddleman.Common.Middleman;
+using RudeShadermiddleman.Common.ShaderTable;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -9,7 +9,7 @@ using System.IO.Pipes;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
-namespace RudeShaderMiddleman
+namespace RudeShaderMiddleman.DotnetFramework
 {
 	class Program
 	{

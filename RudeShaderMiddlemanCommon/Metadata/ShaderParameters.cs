@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 
-namespace RudeShadermiddlemanCommon.Metadata
+namespace RudeShadermiddleman.Common.Metadata
 {
 	public class ShaderParameters
 	{

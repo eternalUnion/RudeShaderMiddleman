@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace RudeShadermiddlemanCommon.Metadata
+namespace RudeShadermiddleman.Common.Metadata
 {
     public class TextureParameter
     {

@@ -119,9 +119,9 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\RudeShaderMiddlemanCommon\RudeShaderMiddlemanCommon.csproj">
+    <ProjectReference Include="..\RudeShaderMiddlemanCommon\RudeShaderMiddleman.Common.csproj">
       <Project>{66a2433a-4a82-4b46-bd2c-b64fe08c7ccb}</Project>
-      <Name>RudeShaderMiddlemanCommon</Name>
+      <Name>RudeShaderMiddleman.Common</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

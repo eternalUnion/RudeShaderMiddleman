@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace RudeShadermiddlemanCommon.Middleman
+namespace RudeShadermiddleman.Common.Middleman
 {
 	public partial class CompilerMiddleman
 	{

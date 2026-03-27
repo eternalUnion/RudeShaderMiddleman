@@ -1,7 +1,7 @@
-﻿using RudeShadermiddlemanCommon.ShaderTable.Enums;
+﻿using RudeShadermiddleman.Common.ShaderTable.Enums;
 using System.IO;
 
-namespace RudeShadermiddlemanCommon.ShaderTable
+namespace RudeShadermiddleman.Common.ShaderTable
 {
 	public struct BindChannel
 	{
