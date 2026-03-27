@@ -1,5 +1,6 @@
-﻿using RudeShaderMiddleman.Metadata;
-using RudeShaderMiddleman.ShaderTable.Enums;
+﻿using RudeShadermiddlemanCommon.Metadata;
+using RudeShadermiddlemanCommon.ShaderTable;
+using RudeShadermiddlemanCommon.ShaderTable.Enums;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -7,9 +8,9 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace RudeShaderMiddleman.Middleman
+namespace RudeShadermiddlemanCommon.Middleman
 {
-	internal partial class CompilerMiddleman
+	public partial class CompilerMiddleman
 	{
 		private static Regex passNameRegex = new Regex(@"^<Unnamed Pass (\d+)>$");
 

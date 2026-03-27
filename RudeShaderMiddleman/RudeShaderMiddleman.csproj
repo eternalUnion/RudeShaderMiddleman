@@ -99,34 +99,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Middleman\CompilerComputeKernelCommand.cs" />
-    <Compile Include="Middleman\CompilerMiddleman.cs" />
-    <Compile Include="Middleman\CompileSnippetCommand.cs" />
-    <Compile Include="Middleman\DisassembleShaderCommand.cs" />
-    <Compile Include="Middleman\InitializeCompilerCommand.cs" />
-    <Compile Include="Middleman\IPCProtocol.cs" />
-    <Compile Include="Middleman\PreprocessCommand.cs" />
-    <Compile Include="Middleman\PreprocessComputeCommand.cs" />
-    <Compile Include="Middleman\ShutdownCommand.cs" />
-    <Compile Include="ShaderTable\BindChannel.cs" />
-    <Compile Include="DummyStream.cs" />
-    <Compile Include="Metadata\ConstantBuffer.cs" />
-    <Compile Include="Metadata\ConstantBufferBinding.cs" />
-    <Compile Include="Metadata\ConstantBufferParameter.cs" />
-    <Compile Include="Metadata\SamplerParameter.cs" />
-    <Compile Include="Metadata\ShaderParameters.cs" />
-    <Compile Include="Metadata\ShaderParamType.cs" />
-    <Compile Include="Metadata\StructParameter.cs" />
-    <Compile Include="Metadata\TextureParameter.cs" />
-    <Compile Include="Metadata\UAVParameter.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ShaderTable\Enums\GPUPlatform.cs" />
-    <Compile Include="ShaderTable\ShaderEntry.cs" />
-    <Compile Include="ShaderTable\ShaderPass.cs" />
-    <Compile Include="ShaderTable\Enums\ShaderGpuProgramType.cs" />
-    <Compile Include="ShaderTable\Enums\VertexComponent.cs" />
-    <Compile Include="ShaderTable\VariantEntry.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -144,7 +118,12 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\RudeShaderMiddlemanCommon\RudeShaderMiddlemanCommon.csproj">
+      <Project>{66a2433a-4a82-4b46-bd2c-b64fe08c7ccb}</Project>
+      <Name>RudeShaderMiddlemanCommon</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\Fody.6.8.2\build\Fody.targets" Condition="Exists('..\packages\Fody.6.8.2\build\Fody.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

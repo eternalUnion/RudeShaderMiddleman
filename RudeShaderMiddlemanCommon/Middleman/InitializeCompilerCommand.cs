@@ -1,8 +1,8 @@
 ﻿using System.Text;
 
-namespace RudeShaderMiddleman.Middleman
+namespace RudeShadermiddlemanCommon.Middleman
 {
-	internal partial class CompilerMiddleman
+	public partial class CompilerMiddleman
 	{
 		private void InitializeCompiler()
 		{

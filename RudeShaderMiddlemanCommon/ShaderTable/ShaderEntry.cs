@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 
-namespace RudeShaderMiddleman
+namespace RudeShadermiddlemanCommon.ShaderTable
 {
-	class ShaderEntry
+	public class ShaderEntry
 	{
 		public string guid = "";
 		public List<string> shaderKeywords = new List<string>();

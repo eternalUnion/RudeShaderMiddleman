@@ -1,4 +1,4 @@
-﻿namespace RudeShaderMiddleman
+﻿namespace RudeShadermiddlemanCommon.ShaderTable.Enums
 {
 	public enum VertexComponent : uint
 	{

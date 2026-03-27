@@ -1,17 +1,20 @@
-﻿using System;
+﻿using RudeShadermiddlemanCommon.ShaderTable;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
-using System.IO.Pipes;
 using System.Text;
 
-namespace RudeShaderMiddleman.Middleman
+namespace RudeShadermiddlemanCommon.Middleman
 {
-	internal partial class CompilerMiddleman
+	public partial class CompilerMiddleman
 	{
-		private readonly NamedPipeClientStream unityPipeStream;
-		private readonly NamedPipeServerStream compilerPipeStream;
+		private readonly Stream unityPipeStream;
+		private readonly Stream compilerPipeStream;
 		private readonly StreamWriter middlemanOutputLog;
+
+		private readonly Func<bool> unityPipeStreamConnected;
+		private readonly Func<bool> compilerPipeStreamConnected;
 
 		private readonly Dictionary<string, ShaderEntry> shaders;
 		private readonly ZipArchive blobs;
@@ -60,15 +63,19 @@ namespace RudeShaderMiddleman.Middleman
 		}
 
 		public CompilerMiddleman(
-			NamedPipeClientStream unityPipeStream,
-			NamedPipeServerStream compilerPipeStream,
+			Stream unityPipeStream,
+			Func<bool> unityPipeStreamConnected,
+			Stream compilerPipeStream,
+			Func<bool> compilerPipeStreamConnected,
 			StreamWriter middlemanOutputLog,
 			Dictionary<string, ShaderEntry> shaders,
 			ZipArchive blobs
 		)
 		{
 			this.unityPipeStream = unityPipeStream;
+			this.unityPipeStreamConnected = unityPipeStreamConnected;
 			this.compilerPipeStream = compilerPipeStream;
+			this.compilerPipeStreamConnected = compilerPipeStreamConnected;
 			this.middlemanOutputLog = middlemanOutputLog;
 			this.shaders = shaders;
 			this.blobs = blobs;
@@ -79,13 +86,19 @@ namespace RudeShaderMiddleman.Middleman
 			if (unityPipeStream == null)
 				throw new ArgumentNullException("Unity pipe stream is null");
 
+			if (unityPipeStreamConnected == null)
+				throw new ArgumentNullException("Unity pipe stream connected function is null");
+
 			if (compilerPipeStream == null)
 				throw new ArgumentNullException("Pipe compiler stream is null");
 
-			if (!unityPipeStream.IsConnected)
+			if (compilerPipeStreamConnected == null)
+				throw new ArgumentNullException("Compiler pipe stream connected function is null");
+
+			if (!unityPipeStreamConnected())
 				throw new ArgumentException("Unity pipe stream is not connected");
 
-			if (!compilerPipeStream.IsConnected)
+			if (!compilerPipeStreamConnected())
 				throw new ArgumentException("Compiler pipe stream is not connected");
 
 			if (shaders == null)
@@ -159,9 +172,9 @@ namespace RudeShaderMiddleman.Middleman
 				middlemanOutputLog.WriteLine(e.StackTrace);
 				middlemanOutputLog.Flush();
 
-				if (unityPipeStream.IsConnected)
+				if (unityPipeStreamConnected())
 					unityPipeStream.Close();
-				if (compilerPipeStream.IsConnected)
+				if (compilerPipeStreamConnected())
 					compilerPipeStream.Close();
 
 				Environment.Exit(1);

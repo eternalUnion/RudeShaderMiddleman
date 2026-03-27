@@ -1,4 +1,5 @@
-﻿using RudeShaderMiddleman.Middleman;
+﻿using RudeShadermiddlemanCommon.Middleman;
+using RudeShadermiddlemanCommon.ShaderTable;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -167,7 +168,9 @@ namespace RudeShaderMiddleman
 
 								CompilerMiddleman middleman = new CompilerMiddleman(
 									unityPipeStream,
+									() => unityPipeStream.IsConnected,
 									compilerPipeStream,
+									() => compilerPipeStream.IsConnected,
 									middlemanOutputLog,
 									shaders,
 									blobs

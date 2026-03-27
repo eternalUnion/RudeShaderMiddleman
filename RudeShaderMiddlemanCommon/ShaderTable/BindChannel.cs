@@ -1,8 +1,9 @@
-﻿using System.IO;
+﻿using RudeShadermiddlemanCommon.ShaderTable.Enums;
+using System.IO;
 
-namespace RudeShaderMiddleman
+namespace RudeShadermiddlemanCommon.ShaderTable
 {
-	struct BindChannel
+	public struct BindChannel
 	{
 		public int Source;
 		public VertexComponent Target;

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 
-namespace RudeShaderMiddleman.Metadata
+namespace RudeShadermiddlemanCommon.Metadata
 {
 	public class ConstantBuffer
 	{

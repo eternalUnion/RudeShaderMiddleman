@@ -1,10 +1,10 @@
-﻿using RudeShaderMiddleman.Metadata;
+﻿using RudeShadermiddlemanCommon.Metadata;
 using System.Collections.Generic;
 using System.IO;
 
-namespace RudeShaderMiddleman
+namespace RudeShadermiddlemanCommon.ShaderTable
 {
-	class VariantEntry
+	public class VariantEntry
 	{
 		// Info
 		public int type;

@@ -4,9 +4,9 @@ using System.IO.Pipes;
 using System.Linq;
 using System.Text;
 
-namespace RudeShaderMiddleman.Middleman
+namespace RudeShadermiddlemanCommon.Middleman
 {
-	internal partial class CompilerMiddleman
+	public partial class CompilerMiddleman
 	{
 		// Protocol header
 		private static readonly byte[] magic = new byte[] { 0xE4, 0xD1, 0x0B, 0x0C };
@@ -61,30 +61,30 @@ namespace RudeShaderMiddleman.Middleman
 
 		#region Read
 		private byte[] headerBuff = new byte[12];
-		private Header ReadHeader(PipeStream input, PipeStream output, bool readSecond, bool writeToOutput = true)
+		private Header ReadHeader(Stream input, Stream output, bool readSecond, bool writeToOutput = true)
 		{
 			if (input == output)
 			{
 				throw new ArgumentException("input == output");
 			}
 
+			var inputConnected = (input == unityPipeStream) ? unityPipeStreamConnected : compilerPipeStreamConnected;
+			var outputConnected = (output == unityPipeStream) ? unityPipeStreamConnected : compilerPipeStreamConnected;
+
 			int readBytes = 0;
 			do
 			{
 				readBytes += input.Read(headerBuff, readBytes, (readSecond ? 12 : 8) - readBytes);
 
-				if (!input.IsConnected)
+				if (!inputConnected())
 				{
 					middlemanOutputLog.WriteLine($"{(input == unityPipeStream ? "Unity pipe" : "Compiler server")} closed.");
 
 					if (output == unityPipeStream)
 						SendShutdownMessage();
 
-					if (compilerPipeStream.IsConnected)
-						compilerPipeStream.Close();
-
-					if (unityPipeStream.IsConnected)
-						unityPipeStream.Close();
+					compilerPipeStream.Dispose();
+					unityPipeStream.Dispose();
 
 					Environment.Exit(1);
 				}
@@ -105,18 +105,15 @@ namespace RudeShaderMiddleman.Middleman
 				output.Write(headerBuff, 0, readSecond ? 12 : 8);
 			}
 
-			if (!output.IsConnected)
+			if (!outputConnected())
 			{
 				middlemanOutputLog.WriteLine($"{(output == unityPipeStream ? "Unity pipe" : "Compiler server")} closed.");
 
 				if (output == unityPipeStream)
 					SendShutdownMessage();
 
-				if (compilerPipeStream.IsConnected)
-					compilerPipeStream.Close();
-
-				if (unityPipeStream.IsConnected)
-					unityPipeStream.Close();
+				compilerPipeStream.Dispose();
+				unityPipeStream.Dispose();
 
 				Environment.Exit(1);
 			}
@@ -124,12 +121,15 @@ namespace RudeShaderMiddleman.Middleman
 			return readSecond ? new Header(BitConverter.ToInt32(headerBuff, 4), BitConverter.ToInt32(headerBuff, 8)) : new Header(BitConverter.ToInt32(headerBuff, 4));
 		}
 
-		private int ReadString(PipeStream input, PipeStream output, bool writeToOutput = true)
+		private int ReadString(Stream input, Stream output, bool writeToOutput = true)
 		{
 			if (input == output)
 			{
 				throw new ArgumentException("input == output");
 			}
+
+			var inputConnected = (input == unityPipeStream) ? unityPipeStreamConnected : compilerPipeStreamConnected;
+			var outputConnected = (output == unityPipeStream) ? unityPipeStreamConnected : compilerPipeStreamConnected;
 
 			Header header = ReadHeader(input, output, true, writeToOutput);
 			if (header.first == 0)
@@ -142,18 +142,15 @@ namespace RudeShaderMiddleman.Middleman
 			{
 				readBytes += input.Read(buff, readBytes, header.first - readBytes);
 
-				if (!input.IsConnected)
+				if (!inputConnected())
 				{
 					middlemanOutputLog.WriteLine($"{(input == unityPipeStream ? "Unity pipe" : "Compiler server")} closed.");
 
 					if (output == unityPipeStream)
 						SendShutdownMessage();
 
-					if (compilerPipeStream.IsConnected)
-						compilerPipeStream.Close();
-
-					if (unityPipeStream.IsConnected)
-						unityPipeStream.Close();
+					compilerPipeStream.Dispose();
+					unityPipeStream.Dispose();
 
 					Environment.Exit(1);
 				}
@@ -169,18 +166,15 @@ namespace RudeShaderMiddleman.Middleman
 				output.Write(buff, 0, readBytes);
 			}
 
-			if (!output.IsConnected)
+			if (!outputConnected())
 			{
 				middlemanOutputLog.WriteLine($"{(output == unityPipeStream ? "Unity pipe" : "Compiler server")} closed.");
 
 				if (output == unityPipeStream)
 					SendShutdownMessage();
 
-				if (compilerPipeStream.IsConnected)
-					compilerPipeStream.Close();
-
-				if (unityPipeStream.IsConnected)
-					unityPipeStream.Close();
+				compilerPipeStream.Dispose();
+				unityPipeStream.Dispose();
 
 				Environment.Exit(1);
 			}
@@ -192,26 +186,25 @@ namespace RudeShaderMiddleman.Middleman
 
 
 		#region Write
-		private void WriteHeader(PipeStream output, int first)
+		private void WriteHeader(Stream output, int first)
 		{
 			byte[] header = new byte[8];
 			Array.Copy(magic, 0, header, 0, 4);
 			Array.Copy(BitConverter.GetBytes(first), 0, header, 4, 4);
 
+			var outputConnected = (output == unityPipeStream) ? unityPipeStreamConnected : compilerPipeStreamConnected;
+
 			output.Write(header, 0, 8);
 
-			if (!output.IsConnected)
+			if (!outputConnected())
 			{
 				middlemanOutputLog.WriteLine($"{(output == unityPipeStream ? "Unity pipe" : "Compiler server")} closed.");
 
 				if (output == unityPipeStream)
 					SendShutdownMessage();
 
-				if (compilerPipeStream.IsConnected)
-					compilerPipeStream.Close();
-
-				if (unityPipeStream.IsConnected)
-					unityPipeStream.Close();
+				compilerPipeStream.Dispose();
+				unityPipeStream.Dispose();
 
 				Environment.Exit(1);
 			}
@@ -219,27 +212,26 @@ namespace RudeShaderMiddleman.Middleman
 			PrintTransmission(output == unityPipeStream, header, 8);
 		}
 
-		private void WriteHeader(PipeStream output, int first, int second)
+		private void WriteHeader(Stream output, int first, int second)
 		{
 			byte[] header = new byte[12];
 			Array.Copy(magic, 0, header, 0, 4);
 			Array.Copy(BitConverter.GetBytes(first), 0, header, 4, 4);
 			Array.Copy(BitConverter.GetBytes(second), 0, header, 8, 4);
 
+			var outputConnected = (output == unityPipeStream) ? unityPipeStreamConnected : compilerPipeStreamConnected;
+
 			output.Write(header, 0, 12);
 
-			if (!output.IsConnected)
+			if (!outputConnected())
 			{
 				middlemanOutputLog.WriteLine($"{(output == unityPipeStream ? "Unity pipe" : "Compiler server")} closed.");
 
 				if (output == unityPipeStream)
 					SendShutdownMessage();
 
-				if (compilerPipeStream.IsConnected)
-					compilerPipeStream.Close();
-
-				if (unityPipeStream.IsConnected)
-					unityPipeStream.Close();
+				compilerPipeStream.Dispose();
+				unityPipeStream.Dispose();
 
 				Environment.Exit(1);
 			}
@@ -247,24 +239,23 @@ namespace RudeShaderMiddleman.Middleman
 			PrintTransmission(output == unityPipeStream, header, 12);
 		}
 		
-		private void Write(PipeStream output, byte[] buff, int offset, int length)
+		private void Write(Stream output, byte[] buff, int offset, int length)
 		{
 			WriteHeader(output, length, 0);
 
+			var outputConnected = (output == unityPipeStream) ? unityPipeStreamConnected : compilerPipeStreamConnected;
+
 			output.Write(buff, offset, length);
 
-			if (!output.IsConnected)
+			if (!outputConnected())
 			{
 				middlemanOutputLog.WriteLine($"{(output == unityPipeStream ? "Unity pipe" : "Compiler server")} closed.");
 
 				if (output == unityPipeStream)
 					SendShutdownMessage();
 
-				if (compilerPipeStream.IsConnected)
-					compilerPipeStream.Close();
-
-				if (unityPipeStream.IsConnected)
-					unityPipeStream.Close();
+				compilerPipeStream.Dispose();
+				unityPipeStream.Dispose();
 
 				Environment.Exit(1);
 			}
@@ -274,9 +265,11 @@ namespace RudeShaderMiddleman.Middleman
 
 		private byte[] writeBuff = new byte[32768];
 
-		private void Write(PipeStream output, Stream stream, int length)
+		private void Write(Stream output, Stream stream, int length)
 		{
 			WriteHeader(output, length, 0);
+
+			var outputConnected = (output == unityPipeStream) ? unityPipeStreamConnected : compilerPipeStreamConnected;
 
 			int read;
 			bool prefix = true;
@@ -290,24 +283,21 @@ namespace RudeShaderMiddleman.Middleman
 				prefix = false;
 			}
 
-			if (!output.IsConnected)
+			if (!outputConnected())
 			{
 				middlemanOutputLog.WriteLine($"{(output == unityPipeStream ? "Unity pipe" : "Compiler server")} closed.");
 
 				if (output == unityPipeStream)
 					SendShutdownMessage();
 
-				if (compilerPipeStream.IsConnected)
-					compilerPipeStream.Close();
-				
-				if (unityPipeStream.IsConnected)
-					unityPipeStream.Close();
+				compilerPipeStream.Close();
+				unityPipeStream.Close();
 
 				Environment.Exit(1);
 			}
 		}
 
-		private void WriteString(PipeStream output, string str)
+		private void WriteString(Stream output, string str)
 		{
 			byte[] stringBuff = Encoding.UTF8.GetBytes(str);
 			Write(output, stringBuff, 0, stringBuff.Length);
@@ -316,7 +306,7 @@ namespace RudeShaderMiddleman.Middleman
 
 		private void SendShutdownMessage()
 		{
-			if (!compilerPipeStream.IsConnected)
+			if (!compilerPipeStreamConnected())
 				return;
 
 			WriteString(compilerPipeStream, "c:shutdown");
