@@ -1,4 +1,5 @@
-﻿using RudeShaderMiddleman.Common.ShaderTable;
+﻿using RudeShaderMiddleman.Common.BlobTable;
+using RudeShaderMiddleman.Common.ShaderTable;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -16,8 +17,8 @@ namespace RudeShaderMiddleman.Common.Middleman
 		private readonly Func<bool> unityPipeStreamConnected;
 		private readonly Func<bool> compilerPipeStreamConnected;
 
-		private readonly Dictionary<string, ShaderEntry> shaders;
-		private readonly ZipArchive blobs;
+		private readonly ShaderTableFile shaderTable;
+		private readonly BlobTableFile blobs;
 
 		enum LogLevel
 		{
@@ -68,8 +69,8 @@ namespace RudeShaderMiddleman.Common.Middleman
 			Stream compilerPipeStream,
 			Func<bool> compilerPipeStreamConnected,
 			StreamWriter middlemanOutputLog,
-			Dictionary<string, ShaderEntry> shaders,
-			ZipArchive blobs
+			ShaderTableFile shaderTableFile,
+			BlobTableFile blobs
 		)
 		{
 			this.unityPipeStream = unityPipeStream;
@@ -77,7 +78,7 @@ namespace RudeShaderMiddleman.Common.Middleman
 			this.compilerPipeStream = compilerPipeStream;
 			this.compilerPipeStreamConnected = compilerPipeStreamConnected;
 			this.middlemanOutputLog = middlemanOutputLog;
-			this.shaders = shaders;
+			this.shaderTable = shaderTableFile;
 			this.blobs = blobs;
 
 			if (middlemanOutputLog == null)
@@ -101,7 +102,7 @@ namespace RudeShaderMiddleman.Common.Middleman
 			if (!compilerPipeStreamConnected())
 				throw new ArgumentException("Compiler pipe stream is not connected");
 
-			if (shaders == null)
+			if (shaderTableFile == null)
 				throw new ArgumentException("Shader map is null");
 
 			if (blobs == null)

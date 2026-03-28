@@ -1,6 +1,7 @@
 ﻿using RudeShaderMiddleman.Common.Metadata;
 using RudeShaderMiddleman.Common.ShaderTable;
 using RudeShaderMiddleman.Common.ShaderTable.Enums;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -211,96 +212,89 @@ namespace RudeShaderMiddleman.Common.Middleman
 			if (!passNameMatch.Success)
 				Log($"Invalid pass name: {passName}");
 
-			if (platform != GPUPlatform.d3d11)
-				Log($"Warning: platform is not {GPUPlatform.d3d11}, will not inject ULTRAKILL shader");
-
 			// Injection
-			if (passNameMatch.Success && guid != null && shaders.TryGetValue(guid, out ShaderEntry entry) && platform == GPUPlatform.d3d11)
+
+			ShaderGpuProgramType requiredType = ShaderGpuProgramType.Unknown;
+			switch (platform)
 			{
-				int passNum = int.Parse(passNameMatch.Groups[1].Value);
-				ShaderPass passEntry = entry.shaderPasses.Where(p => p.passNum == passNum).FirstOrDefault();
+				case GPUPlatform.d3d11:
+					requiredType = (vertexShader) ? ShaderGpuProgramType.DX11VertexSM40 : ShaderGpuProgramType.DX11PixelSM40;
+					break;
 
-				Log($"Shader found in the table. Attempting to find suitable variant...");
+				case GPUPlatform.glcore:
+					requiredType = ShaderGpuProgramType.GLCore32;
+					break;
 
-				if (passEntry == null)
+				case GPUPlatform.vulkan:
+					requiredType = ShaderGpuProgramType.SPIRV;
+					break;
+			}
+			
+			int passNum = (passNameMatch.Success) ? int.Parse(passNameMatch.Groups[1].Value) : -1;
+			var entry = (guid == null) ? null : shaderTable.GetShaderEntry(guid);
+			var passEntry = (entry == null) ? null : entry.shaderPasses.Where(p => p.passNum == passNum).FirstOrDefault();
+			var variantEnumerator = (guid == null) ? null : shaderTable.GetVariantEnumerator(guid, passNum, requiredType);
+
+			if (entry != null && passEntry != null && variantEnumerator != null)
+			{
+				Log($"Shader pass found in the table. Attempting to find suitable variant...");
+
+				long enabledBitmask = 0;
+
+				foreach (string enabledKeyword in enabledKeywords)
 				{
-					Log($"Shader pass not found");
+					int keywordIdx = entry.shaderKeywords.IndexOf(enabledKeyword);
+					if (keywordIdx == -1)
+						continue;
+
+					enabledBitmask |= (long)1 << keywordIdx;
+				}
+
+				VariantEntry matchedVariant = null;
+
+				if (vertexShader)
+				{
+					enabledBitmask = enabledBitmask & passEntry.vertexKeywordMask;
 				}
 				else
 				{
-					long enabledBitmask = 0;
+					enabledBitmask = enabledBitmask & passEntry.fragmentKeywordMask;
+				}
 
-					foreach (string enabledKeyword in enabledKeywords)
+				foreach (var variant in variantEnumerator)
+				{
+					matchedVariant = variant;
+					if ((variant.keywords & enabledBitmask) == enabledBitmask)
+						break;
+				}
+
+				byte[] segment = blobs.GetSegment(matchedVariant.segment);
+				WriteBindings(passEntry, matchedVariant, vertexShader);
+
+				// Ignore compiler output
+				while (true)
+				{
+					readBytes = ReadString(compilerPipeStream, unityPipeStream, false);
+					string binding = Encoding.UTF8.GetString(buff, 0, readBytes);
+					Log($"(SKIP) Binding = '{binding}'", LogLevel.DEBUG);
+
+					if (Encoding.UTF8.GetString(buff, 0, readBytes).StartsWith("shader: "))
 					{
-						int keywordIdx = entry.shaderKeywords.IndexOf(enabledKeyword);
-						if (keywordIdx == -1)
-							continue;
-
-						enabledBitmask |= (long)1 << keywordIdx;
-					}
-
-					VariantEntry matchedVariant = null;
-
-					if (vertexShader)
-					{
-						enabledBitmask = enabledBitmask & passEntry.vertexKeywordMask;
-						matchedVariant = passEntry.vertexVariants.Where(v => (v.keywords & enabledBitmask) == enabledBitmask).FirstOrDefault();
-						if (matchedVariant == null)
-						{
-							matchedVariant = passEntry.vertexVariants.Last();
-							Log($"Using fallback variant");
-						}
-					}
-					else
-					{
-						enabledBitmask = enabledBitmask & passEntry.fragmentKeywordMask;
-						matchedVariant = passEntry.fragmentVariants.Where(v => (v.keywords & enabledBitmask) == enabledBitmask).FirstOrDefault();
-						if (matchedVariant == null)
-						{
-							matchedVariant = passEntry.fragmentVariants.Last();
-							Log($"Using fallback variant");
-						}
-					}
-
-					ZipArchiveEntry blob = blobs.GetEntry($"{guid}/{matchedVariant.offset}");
-					if (blob == null)
-					{
-						Log("Could not locate blob entry");
-					}
-					else
-					{
-						WriteBindings(passEntry, matchedVariant, vertexShader);
-
-						// Ignore compiler output
-						while (true)
-						{
-							readBytes = ReadString(compilerPipeStream, unityPipeStream, false);
-							string binding = Encoding.UTF8.GetString(buff, 0, readBytes);
-							Log($"(SKIP) Binding = '{binding}'", LogLevel.DEBUG);
-
-							if (Encoding.UTF8.GetString(buff, 0, readBytes).StartsWith("shader: "))
-							{
-								break;
-							}
-						}
-
-						header = ReadHeader(compilerPipeStream, unityPipeStream, false, false);
-
-						Log("(SKIP) Shader bytecode", LogLevel.DEBUG);
-						readBytes = ReadString(compilerPipeStream, unityPipeStream, false);
-
-						// Inject shader
-						WriteString(unityPipeStream, "shader: 1");
-						WriteHeader(unityPipeStream, matchedVariant.type);
-
-						using (Stream blobStream = blob.Open())
-						{
-							Write(unityPipeStream, blobStream, matchedVariant.length);
-						}
-
-						shaderReplaced = true;
+						break;
 					}
 				}
+
+				header = ReadHeader(compilerPipeStream, unityPipeStream, false, false);
+
+				Log("(SKIP) Shader bytecode", LogLevel.DEBUG);
+				readBytes = ReadString(compilerPipeStream, unityPipeStream, false);
+
+				// Inject shader
+				WriteString(unityPipeStream, "shader: 1");
+				WriteHeader(unityPipeStream, matchedVariant.type);
+				Write(unityPipeStream, segment, matchedVariant.offset, matchedVariant.length);
+
+				shaderReplaced = true;
 			}
 
 			// Response in case no injection was done
@@ -323,6 +317,8 @@ namespace RudeShaderMiddleman.Common.Middleman
 				Log("Shader bytecode", LogLevel.DEBUG);
 				readBytes = ReadString(compilerPipeStream, unityPipeStream);
 			}
+
+			GC.Collect();
 		}
 	}
 }

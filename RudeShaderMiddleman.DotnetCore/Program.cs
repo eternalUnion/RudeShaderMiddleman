@@ -1,4 +1,5 @@
-﻿using RudeShaderMiddleman.Common.Middleman;
+﻿using RudeShaderMiddleman.Common.BlobTable;
+using RudeShaderMiddleman.Common.Middleman;
 using RudeShaderMiddleman.Common.ShaderTable;
 using System.Diagnostics;
 using System.IO.Compression;
@@ -18,8 +19,8 @@ public class Program
 	private static Process compProc;
 
 	// Data
-	private static Dictionary<string, ShaderEntry> shaders = new Dictionary<string, ShaderEntry>();
-	private static ZipArchive blobs;
+	private static ShaderTableFile shaderTable;
+	private static BlobTableFile blobTable;
 
 	static int Main(string[] args)
 	{
@@ -105,7 +106,7 @@ public class Program
 					compProc = Process.Start(info);
 				}
 
-				string tablePath = Path.Combine(currentDir, "table.bin");
+				string tablePath = Path.Combine(currentDir, "table.zip");
 				if (!File.Exists(tablePath))
 				{
 					middlemanOutputLog.WriteLine($"ERROR: Could not locate table.bin at '{tablePath}'");
@@ -116,7 +117,7 @@ public class Program
 					return compProc.ExitCode;
 				}
 
-				string blobPath = Path.Combine(currentDir, "blobs.zip");
+				string blobPath = Path.Combine(currentDir, "blobs.bin");
 				if (!File.Exists(blobPath))
 				{
 					middlemanOutputLog.WriteLine($"ERROR: Could not locate blobs.zip at '{blobPath}'");
@@ -127,67 +128,60 @@ public class Program
 					return compProc.ExitCode;
 				}
 
-				using (BinaryReader reader = new BinaryReader(File.Open(tablePath, FileMode.Open, FileAccess.Read, FileShare.Read)))
+				using (shaderTable = new ShaderTableFile(new ZipArchive(File.Open(tablePath, FileMode.Open, FileAccess.Read, FileShare.Read), ZipArchiveMode.Read)))
 				{
-					int shaderCnt = reader.ReadInt32();
-					for (int i = 0; i < shaderCnt; i++)
+					using (blobTable = new BlobTableFile(File.Open(blobPath, FileMode.Open, FileAccess.Read, FileShare.Read)))
 					{
-						ShaderEntry entry = new ShaderEntry(reader);
-						shaders[entry.guid] = entry;
-					}
-				}
-
-				using (blobs = new ZipArchive(File.Open(blobPath, FileMode.Open, FileAccess.Read, FileShare.Read), ZipArchiveMode.Read))
-				{
-					using (unityPipeStream = new NamedPipeClientStream($"/tmp/Unity-{streamName}.sock"))
-					{
-						string compilerStreamName = $"shader-middleman-{procId}";
-						using (compilerPipeStream = new NamedPipeServerStream($"/tmp/Unity-{compilerStreamName}.sock"))
+						using (unityPipeStream = new NamedPipeClientStream($"/tmp/Unity-{streamName}.sock"))
 						{
-							StartCompilerProcess(compilerStreamName);
-
-							compilerPipeStream.WaitForConnection();
-							if (!compilerPipeStream.IsConnected)
+							string compilerStreamName = $"shader-middleman-{procId}";
+							using (compilerPipeStream = new NamedPipeServerStream($"/tmp/Unity-{compilerStreamName}.sock"))
 							{
-								middlemanOutputLog.WriteLine("Failed to connect to the compiler!");
-								middlemanOutputLog.Flush();
+								StartCompilerProcess(compilerStreamName);
+
+								compilerPipeStream.WaitForConnection();
+								if (!compilerPipeStream.IsConnected)
+								{
+									middlemanOutputLog.WriteLine("Failed to connect to the compiler!");
+									middlemanOutputLog.Flush();
+									return 1;
+								}
+
+								middlemanOutputLog.WriteLine("Compiler connected!");
+
+								unityPipeStream.Connect(5000);
+								if (!unityPipeStream.IsConnected)
+								{
+									middlemanOutputLog.WriteLine();
+									middlemanOutputLog.WriteLine($"Failed to open pipe stream!");
+									return 1;
+								}
+
+								middlemanOutputLog.WriteLine("Unity connected!");
+
+								compProc.EnableRaisingEvents = true;
+								compProc.Exited += (o, e) =>
+								{
+									middlemanOutputLog.WriteLine($"Compiler process exited with code {compProc.ExitCode}");
+									middlemanOutputLog.Flush();
+									Environment.Exit(compProc.ExitCode);
+								};
+
+								CompilerMiddleman middleman = new CompilerMiddleman(
+									unityPipeStream,
+									() => unityPipeStream.IsConnected,
+									compilerPipeStream,
+									() => compilerPipeStream.IsConnected,
+									middlemanOutputLog,
+									shaderTable,
+									blobTable
+								);
+
+								middleman.Start();
+
+								// We should never reach this point
 								return 1;
 							}
-
-							middlemanOutputLog.WriteLine("Compiler connected!");
-
-							unityPipeStream.Connect(5000);
-							if (!unityPipeStream.IsConnected)
-							{
-								middlemanOutputLog.WriteLine();
-								middlemanOutputLog.WriteLine($"Failed to open pipe stream!");
-								return 1;
-							}
-
-							middlemanOutputLog.WriteLine("Unity connected!");
-
-							compProc.EnableRaisingEvents = true;
-							compProc.Exited += (o, e) =>
-							{
-								middlemanOutputLog.WriteLine($"Compiler process exited with code {compProc.ExitCode}");
-								middlemanOutputLog.Flush();
-								Environment.Exit(compProc.ExitCode);
-							};
-
-							CompilerMiddleman middleman = new CompilerMiddleman(
-								unityPipeStream,
-								() => unityPipeStream.IsConnected,
-								compilerPipeStream,
-								() => compilerPipeStream.IsConnected,
-								middlemanOutputLog,
-								shaders,
-								blobs
-							);
-
-							middleman.Start();
-
-							// We should never reach this point
-							return 1;
 						}
 					}
 				}

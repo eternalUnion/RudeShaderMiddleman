@@ -14,12 +14,12 @@ namespace RudeShaderMiddleman.Common.Metadata
 		public List<UAVParameter> UAVs;
 		public List<SamplerParameter> Samplers;
 
-		public ShaderParameters(BinaryReader reader)
+		public ShaderParameters(BinaryReader reader, List<string> nameMap)
 		{
 			int baseConstantBufferExists = reader.ReadInt32();
 			if (baseConstantBufferExists != 0)
 			{
-				BaseConstantBuffer = new ConstantBuffer(reader);
+				BaseConstantBuffer = new ConstantBuffer(reader, nameMap);
 			}
 			else
 			{
@@ -30,35 +30,35 @@ namespace RudeShaderMiddleman.Common.Metadata
 			int cbCount = reader.ReadInt32();
 			for (int i = 0; i < cbCount; i++)
 			{
-				ConstantBuffers.Add(new ConstantBuffer(reader));
+				ConstantBuffers.Add(new ConstantBuffer(reader, nameMap));
 			}
 
 			TextureParameters = new List<TextureParameter>();
 			int texCount = reader.ReadInt32();
 			for (int i = 0; i < texCount; i++)
 			{
-				TextureParameters.Add(new TextureParameter(reader));
+				TextureParameters.Add(new TextureParameter(reader, nameMap));
 			}
 
 			ConstBindings = new List<ConstantBufferBinding>();
 			int cbBindsCount = reader.ReadInt32();
 			for (int i = 0; i < cbBindsCount; i++)
 			{
-				ConstBindings.Add(new ConstantBufferBinding(reader));
+				ConstBindings.Add(new ConstantBufferBinding(reader, nameMap));
 			}
 
 			Buffers = new List<ConstantBufferBinding>();
 			int buffCount = reader.ReadInt32();
 			for (int i = 0; i < buffCount; i++)
 			{
-				Buffers.Add(new ConstantBufferBinding(reader));
+				Buffers.Add(new ConstantBufferBinding(reader, nameMap));
 			}
 
 			UAVs = new List<UAVParameter>();
 			int uavCount = reader.ReadInt32();
 			for (int i = 0; i < uavCount; i++)
 			{
-				UAVs.Add(new UAVParameter(reader));
+				UAVs.Add(new UAVParameter(reader, nameMap));
 			}
 
 			Samplers = new List<SamplerParameter>();
@@ -69,7 +69,7 @@ namespace RudeShaderMiddleman.Common.Metadata
 			}
 		}
 
-		public void Serialize(BinaryWriter writer)
+		public void Serialize(BinaryWriter writer, List<string> nameMap)
 		{
 			if (BaseConstantBuffer == null)
 			{
@@ -78,37 +78,37 @@ namespace RudeShaderMiddleman.Common.Metadata
 			else
 			{
 				writer.Write(1);
-				BaseConstantBuffer.Serialize(writer);
+				BaseConstantBuffer.Serialize(writer, nameMap);
 			}
 
 			writer.Write((int)ConstantBuffers.Count);
 			foreach (var constantBuffer in ConstantBuffers)
 			{
-				constantBuffer.Serialize(writer);
+				constantBuffer.Serialize(writer, nameMap);
 			}
 
 			writer.Write((int)TextureParameters.Count);
 			foreach (var textureParameter in TextureParameters)
 			{
-				textureParameter.Serialize(writer);
+				textureParameter.Serialize(writer, nameMap);
 			}
 
 			writer.Write((int)ConstBindings.Count);
 			foreach (var constBinding in ConstBindings)
 			{
-				constBinding.Serialize(writer);
+				constBinding.Serialize(writer, nameMap);
 			}
 
 			writer.Write((int)Buffers.Count);
 			foreach (var buffer in Buffers)
 			{
-				buffer.Serialize(writer);
+				buffer.Serialize(writer, nameMap);
 			}
 
 			writer.Write((int)UAVs.Count);
 			foreach (var uav in UAVs)
 			{
-				uav.Serialize(writer);
+				uav.Serialize(writer, nameMap);
 			}
 
 			writer.Write((int)Samplers.Count);

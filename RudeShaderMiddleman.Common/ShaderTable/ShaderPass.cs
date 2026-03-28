@@ -13,56 +13,26 @@ namespace RudeShaderMiddleman.Common.ShaderTable
 		public ShaderParameters vertexCommonParameters;
 		public ShaderParameters fragmentCommonParameters;
 
-		public List<VariantEntry> vertexVariants = new List<VariantEntry>();
-
-		public List<VariantEntry> fragmentVariants = new List<VariantEntry>();
-
 		public ShaderPass() { }
 
-		public ShaderPass(BinaryReader reader)
+		public ShaderPass(BinaryReader reader, List<string> nameMap)
 		{
 			passNum = reader.ReadInt32();
 			vertexKeywordMask = reader.ReadInt64();
 			fragmentKeywordMask = reader.ReadInt64();
 
-			vertexCommonParameters = new ShaderParameters(reader);
-			fragmentCommonParameters = new ShaderParameters(reader);
-
-			vertexVariants = new List<VariantEntry>();
-			int vertexVarCount = reader.ReadInt32();
-			for (int i = 0; i < vertexVarCount; i++)
-			{
-				vertexVariants.Add(new VariantEntry(reader));
-			}
-
-			fragmentVariants = new List<VariantEntry>();
-			int fragmentVarCount = reader.ReadInt32();
-			for (int i = 0; i < fragmentVarCount; i++)
-			{
-				fragmentVariants.Add(new VariantEntry(reader));
-			}
+			vertexCommonParameters = new ShaderParameters(reader, nameMap);
+			fragmentCommonParameters = new ShaderParameters(reader, nameMap);
 		}
 
-		public void Serialize(BinaryWriter writer)
+		public void Serialize(BinaryWriter writer, List<string> nameMap)
 		{
 			writer.Write(passNum);
 			writer.Write(vertexKeywordMask);
 			writer.Write(fragmentKeywordMask);
 
-			vertexCommonParameters.Serialize(writer);
-			fragmentCommonParameters.Serialize(writer);
-
-			writer.Write((int)vertexVariants.Count);
-			foreach (var vertexVar in vertexVariants)
-			{
-				vertexVar.Serialize(writer);
-			}
-
-			writer.Write((int)fragmentVariants.Count);
-			foreach (var fragmentVar in fragmentVariants)
-			{
-				fragmentVar.Serialize(writer);
-			}
+			vertexCommonParameters.Serialize(writer, nameMap);
+			fragmentCommonParameters.Serialize(writer, nameMap);
 		}
 	}
 }

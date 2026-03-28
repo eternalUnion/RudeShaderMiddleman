@@ -12,6 +12,7 @@ namespace RudeShaderMiddleman.Common.ShaderTable
 		public int sourceMap;
 
 		// Blob location
+		public int segment;
 		public int offset;
 		public int length;
 
@@ -27,11 +28,12 @@ namespace RudeShaderMiddleman.Common.ShaderTable
 
 		public VariantEntry() { }
 
-		public VariantEntry(BinaryReader reader)
+		public VariantEntry(BinaryReader reader, List<string> nameMap)
 		{
 			type = reader.ReadInt32();
 			keywords = reader.ReadInt64();
 			sourceMap = reader.ReadInt32();
+			segment = reader.ReadInt32();
 			offset = reader.ReadInt32();
 			length = reader.ReadInt32();
 			statsAlu = reader.ReadInt32();
@@ -46,14 +48,15 @@ namespace RudeShaderMiddleman.Common.ShaderTable
 				inputBindings.Add(new BindChannel(reader));
 			}
 
-			parameters = new ShaderParameters(reader);
+			parameters = new ShaderParameters(reader, nameMap);
 		}
 
-		public void Serialize(BinaryWriter writer)
+		public void Serialize(BinaryWriter writer, List<string> nameMap)
 		{
 			writer.Write(type);
 			writer.Write(keywords);
 			writer.Write(sourceMap);
+			writer.Write(segment);
 			writer.Write(offset);
 			writer.Write(length);
 			writer.Write(statsAlu);
@@ -67,7 +70,7 @@ namespace RudeShaderMiddleman.Common.ShaderTable
 				input.Serialize(writer);
 			}
 
-			parameters.Serialize(writer);
+			parameters.Serialize(writer, nameMap);
 		}
 	}
 }

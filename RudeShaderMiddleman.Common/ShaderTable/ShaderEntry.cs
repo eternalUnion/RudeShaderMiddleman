@@ -5,16 +5,13 @@ namespace RudeShaderMiddleman.Common.ShaderTable
 {
 	public class ShaderEntry
 	{
-		public string guid = "";
 		public List<string> shaderKeywords = new List<string>();
 		public List<ShaderPass> shaderPasses = new List<ShaderPass>();
 
 		public ShaderEntry() { }
 
-		public ShaderEntry(BinaryReader reader)
+		public ShaderEntry(BinaryReader reader, List<string> nameMap)
 		{
-			guid = reader.ReadString();
-
 			shaderKeywords = new List<string>();
 			int keywordCount = reader.ReadInt32();
 			for (int i = 0; i < keywordCount; i++)
@@ -26,14 +23,12 @@ namespace RudeShaderMiddleman.Common.ShaderTable
 			int passCount = reader.ReadInt32();
 			for (int i = 0; i < passCount; i++)
 			{
-				shaderPasses.Add(new ShaderPass(reader));
+				shaderPasses.Add(new ShaderPass(reader, nameMap));
 			}
 		}
 
-		public void Serialize(BinaryWriter writer)
+		public void Serialize(BinaryWriter writer, List<string> nameMap)
 		{
-			writer.Write(guid);
-
 			writer.Write((int)shaderKeywords.Count);
 			foreach (string keyword in shaderKeywords)
 			{
@@ -43,7 +38,7 @@ namespace RudeShaderMiddleman.Common.ShaderTable
 			writer.Write((int)shaderPasses.Count);
 			foreach (ShaderPass pass in shaderPasses)
 			{
-				pass.Serialize(writer);
+				pass.Serialize(writer, nameMap);
 			}
 		}
 	}
