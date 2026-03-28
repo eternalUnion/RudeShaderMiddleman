@@ -1,5 +1,4 @@
 ﻿using EasyCompressor;
-using K4os.Compression.LZ4.Streams;
 using RudeShaderMiddleman.Common.Streams;
 using System;
 using System.Collections.Generic;

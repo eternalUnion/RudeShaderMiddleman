@@ -72,10 +72,12 @@ namespace RudeShaderMiddleman.DotnetFramework
 					}
 
 					Regex ipcStreamNamePattern = new Regex("^-local-ipc-stream=(.*)");
+					Regex ipcStreamNameStructurePattern = new Regex(@"^ShaderCompilerIPC-(\d+)-(\d+)$");
 
 					string pluginsPath = null;
 					string streamName = null;
 					bool forceLoadPlugins = false;
+					int unityPid = -1;
 
 					for (int i = 3; i < args.Length; i++)
 					{
@@ -85,6 +87,12 @@ namespace RudeShaderMiddleman.DotnetFramework
 						if (match.Success)
 						{
 							streamName = match.Groups[1].Value;
+
+							match = ipcStreamNameStructurePattern.Match(streamName);
+							if (match.Success)
+							{
+								unityPid = int.Parse(match.Groups[1].Value);
+							}
 						}
 						if (arg == "-force-plugins-load")
 						{
@@ -159,6 +167,10 @@ namespace RudeShaderMiddleman.DotnetFramework
 									{
 										middlemanOutputLog.WriteLine($"Compiler process exited with code {compProc.ExitCode}");
 										middlemanOutputLog.Flush();
+
+										compilerPipeStream.Dispose();
+										unityPipeStream.Dispose();
+
 										Environment.Exit(compProc.ExitCode);
 									};
 
@@ -171,6 +183,30 @@ namespace RudeShaderMiddleman.DotnetFramework
 										shaderTable,
 										blobTable
 									);
+
+									if (unityPid != -1)
+									{
+										Process unityProcess = Process.GetProcessById(unityPid);
+										if (unityProcess != null)
+										{
+											unityProcess.EnableRaisingEvents = true;
+											unityProcess.Exited += (o, e) =>
+											{
+												middlemanOutputLog.WriteLine($"Unity process exited with code {unityProcess.ExitCode}");
+												middlemanOutputLog.Flush();
+
+												compilerPipeStream.Dispose();
+												unityPipeStream.Dispose();
+
+												if (!compProc.HasExited)
+												{
+													compProc.Kill();
+												}
+
+												Environment.Exit(0);
+											};
+										}
+									}
 
 									middleman.Start();
 
