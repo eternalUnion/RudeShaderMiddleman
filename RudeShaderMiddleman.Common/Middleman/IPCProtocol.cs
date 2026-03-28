@@ -35,7 +35,7 @@ namespace RudeShaderMiddleman.Common.Middleman
 
 		private void PrintTransmission(bool compilerToUnity, byte[] buff, int len, bool withPrefix = true, bool complete = true)
 		{
-#if DEBUG
+#if DEBUG && VERBOSE
 			StringBuilder s = new StringBuilder();
 			for (int i = 0; i < len; i++)
 			{

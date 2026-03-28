@@ -15,18 +15,56 @@ namespace RudeShaderMiddleman.Common.Middleman
 	{
 		private static Regex passNameRegex = new Regex(@"^<Unnamed Pass (\d+)>$");
 
-		private void WriteBindings(ShaderPass passEntry, VariantEntry variantEntry, bool isVertexShader)
+		private void WriteTextures(VariantEntry variantEntry, ShaderParameters commonParams)
 		{
-			foreach (var binding in variantEntry.inputBindings.OrderBy(b => b.Source))
+			List<TextureParameter> textures = new List<TextureParameter>(variantEntry.parameters.TextureParameters);
+			textures.AddRange(commonParams.TextureParameters.Where(texture => !textures.Any(t => t.Name == texture.Name)));
+
+			foreach (var tex in textures.OrderBy(t => t.Index))
+			{
+				WriteString(unityPipeStream, $"texbind: {tex.Name} {tex.Index} {tex.SamplerIndex} {(tex.MultiSampled ? 1 : 0)} {tex.Dim}");
+				Log($"Binding = texbind: {tex.Name} {tex.Index} {tex.SamplerIndex} {(tex.MultiSampled ? 1 : 0)} {tex.Dim}", LogLevel.DEBUG);
+			}
+		}
+
+		private void WriteInputs(VariantEntry variantEntry, ShaderParameters commonParams)
+		{
+			bool isGlCore = variantEntry.type >= (int)ShaderGpuProgramType.GLCore32 && variantEntry.type <= (int)ShaderGpuProgramType.GLCore43;
+			List<BindChannel> additionalBindings = new List<BindChannel>();
+
+			if (isGlCore)
+			{
+				for (int i = 0; i < 32; i++)
+				{
+					if ((variantEntry.sourceMap & (1 << i)) == 0)
+						continue;
+
+					if (variantEntry.inputBindings.Any(b => b.Source == i))
+						continue;
+
+					additionalBindings.Add(new BindChannel(i, -1));
+
+				}
+			}
+
+			foreach (var binding in variantEntry.inputBindings.Concat(additionalBindings).OrderBy(b => b.Source))
 			{
 				WriteString(unityPipeStream, $"input: {binding.Source} {(int)binding.Target}");
 				Log($"Binding = input: {binding.Source} {(int)binding.Target}", LogLevel.DEBUG);
 			}
+		}
 
-			ShaderParameters commonParams = isVertexShader ? passEntry.vertexCommonParameters : passEntry.fragmentCommonParameters;
+		private static Dictionary<string, int> StandardMemberSizes = new Dictionary<string, int>()
+		{
+			{ "UnityPerDraw", 5 },
+			{ "UnityPerFrame", 11 },
+			{ "UnityFog", 2 },
+			{ "UnityPerCamera", 9 },
+			{ "UnityLighting", 20 },
+		};
 
-			// Variant parameters
-
+		private void WriteCB(VariantEntry variantEntry, ShaderParameters commonParams)
+		{
 			IEnumerable<ConstantBuffer> buffs = (variantEntry.parameters.BaseConstantBuffer == null || string.IsNullOrEmpty(variantEntry.parameters.BaseConstantBuffer.Name))
 				? variantEntry.parameters.ConstantBuffers
 				: new ConstantBuffer[] { variantEntry.parameters.BaseConstantBuffer }.Concat(variantEntry.parameters.ConstantBuffers);
@@ -39,18 +77,30 @@ namespace RudeShaderMiddleman.Common.Middleman
 				if (partialCb != null)
 					parameters.AddRange(partialCb.CBParams);
 
-				WriteString(unityPipeStream, $"cb: {cb.Name} {cb.UsedSize} {parameters.Count}");
-				Log($"Binding = cb: {cb.Name} {cb.UsedSize} {parameters.Count}", LogLevel.DEBUG);
+				int memberCount = parameters.Count;
+				if (StandardMemberSizes.TryGetValue(cb.Name, out int stdMemberCount))
+					memberCount = Math.Max(memberCount, stdMemberCount);
+				
+				WriteString(unityPipeStream, $"cb: {cb.Name} {cb.UsedSize} {memberCount}");
+				Log($"Binding = cb: {cb.Name} {cb.UsedSize} {memberCount}", LogLevel.DEBUG);
 
 				foreach (var param in parameters.OrderBy(p => p.Index))
 				{
-					WriteString(unityPipeStream, $"const: {param.ParamName} {param.Index} 0 {(param.IsMatrix ? 1 : 0)} {param.Rows} {param.Columns} {param.ArraySize}");
-					Log($"Binding = const: {param.ParamName} {param.Index} 0 {(param.IsMatrix ? 1 : 0)} {param.Rows} {param.Columns} {param.ArraySize}", LogLevel.DEBUG);
+					WriteString(unityPipeStream, $"const: {param.ParamName} {param.Index} {(int)param.ParamType} {(param.IsMatrix ? 1 : 0)} {param.Rows} {param.Columns} {param.ArraySize}");
+					Log($"Binding = const: {param.ParamName} {param.Index} {(int)param.ParamType} {(param.IsMatrix ? 1 : 0)} {param.Rows} {param.Columns} {param.ArraySize}", LogLevel.DEBUG);
+				}
+
+				if (cb.StructParams.Count != 0)
+				{
+					Log($"WARNING: Multiple struct params found in CB!!");
 				}
 
 				Log($"Struct param count: {cb.StructParams.Count} : {(partialCb == null ? -1 : partialCb.StructParams.Count)}", LogLevel.DEBUG);
 			}
+		}
 
+		private void WriteCBBindings(VariantEntry variantEntry, ShaderParameters commonParams)
+		{
 			List<ConstantBufferBinding> cbBindings = new List<ConstantBufferBinding>(variantEntry.parameters.ConstBindings);
 			cbBindings.AddRange(commonParams.ConstBindings.Where(binding => !cbBindings.Any(b => b.Name == binding.Name)).ToArray());
 
@@ -59,16 +109,10 @@ namespace RudeShaderMiddleman.Common.Middleman
 				WriteString(unityPipeStream, $"cbbind: {cbBinding.Name} {cbBinding.Index}");
 				Log($"Binding = cbbind: {cbBinding.Name} {cbBinding.Index}", LogLevel.DEBUG);
 			}
+		}
 
-			List<TextureParameter> textures = new List<TextureParameter>(variantEntry.parameters.TextureParameters);
-			textures.AddRange(commonParams.TextureParameters.Where(texture => !textures.Any(t => t.Name == texture.Name)));
-
-			foreach (var tex in textures.OrderBy(t => t.Index))
-			{
-				WriteString(unityPipeStream, $"texbind: {tex.Name} {tex.Index} {tex.SamplerIndex} {(tex.MultiSampled ? 1 : 0)} {tex.Dim}");
-				Log($"Binding = texbind: {tex.Name} {tex.Index} {tex.SamplerIndex} {(tex.MultiSampled ? 1 : 0)} {tex.Dim}", LogLevel.DEBUG);
-			}
-
+		private void WriteBuffers(VariantEntry variantEntry, ShaderParameters commonParams)
+		{
 			List<ConstantBufferBinding> buffers = new List<ConstantBufferBinding>(variantEntry.parameters.Buffers);
 			buffers.AddRange(commonParams.Buffers.Where(buff => !buffers.Any(b => b.Name == buff.Name)));
 
@@ -77,7 +121,10 @@ namespace RudeShaderMiddleman.Common.Middleman
 				WriteString(unityPipeStream, $"bufferbind: {buff.Name} {buff.Index} {buff.ArraySize}");
 				Log($"Binding = bufferbind: {buff.Name} {buff.Index} {buff.ArraySize}", LogLevel.DEBUG);
 			}
+		}
 
+		private void WriteSamplers(VariantEntry variantEntry, ShaderParameters commonParams)
+		{
 			List<SamplerParameter> samplers = new List<SamplerParameter>(variantEntry.parameters.Samplers);
 			samplers.AddRange(commonParams.Samplers.Where(samp => !samplers.Any(s => s.Sampler == samp.Sampler)));
 
@@ -86,9 +133,43 @@ namespace RudeShaderMiddleman.Common.Middleman
 				WriteString(unityPipeStream, $"sampler: {sampler.Sampler} {sampler.BindPoint}");
 				Log($"Binding = sampler: {sampler.Sampler} {sampler.BindPoint}", LogLevel.DEBUG);
 			}
+		}
 
-			WriteString(unityPipeStream, $"stats: {variantEntry.statsAlu} {variantEntry.statsTex} {variantEntry.statsFlow} {variantEntry.statsTempRegister}");
-			Log($"Binding = stats: {variantEntry.statsAlu} {variantEntry.statsTex} {variantEntry.statsFlow} {variantEntry.statsTempRegister}", LogLevel.DEBUG);
+		private void WriteBindings(ShaderPass passEntry, VariantEntry variantEntry, bool isVertexShader)
+		{
+			ShaderParameters commonParams = isVertexShader ? passEntry.vertexCommonParameters : passEntry.fragmentCommonParameters;
+			bool isGlCore = variantEntry.type >= (int)ShaderGpuProgramType.GLCore32 && variantEntry.type <= (int)ShaderGpuProgramType.GLCore43;
+
+			if (isGlCore)
+			{
+				WriteTextures(variantEntry, commonParams);
+				WriteBuffers(variantEntry, commonParams);
+				WriteInputs(variantEntry, commonParams);
+				WriteCB(variantEntry, commonParams);
+				WriteCBBindings(variantEntry, commonParams);
+				WriteSamplers(variantEntry, commonParams);
+			}
+			else
+			{
+				WriteInputs(variantEntry, commonParams);
+				WriteCB(variantEntry, commonParams);
+				WriteCBBindings(variantEntry, commonParams);
+				WriteBuffers(variantEntry, commonParams);
+				WriteTextures(variantEntry, commonParams);
+				WriteSamplers(variantEntry, commonParams);
+			}
+
+			// GLCore does not have stats
+			if (!isGlCore)
+			{
+				WriteString(unityPipeStream, $"stats: {variantEntry.statsAlu} {variantEntry.statsTex} {variantEntry.statsFlow} {variantEntry.statsTempRegister}");
+				Log($"Binding = stats: {variantEntry.statsAlu} {variantEntry.statsTex} {variantEntry.statsFlow} {variantEntry.statsTempRegister}", LogLevel.DEBUG);
+			}
+		
+			if (variantEntry.parameters.UAVs.Count != 0)
+			{
+				Log($"WARNING: Multiple UAV parameters found!!!");
+			}
 		}
 
 		private void CompileSnippet()
@@ -261,11 +342,24 @@ namespace RudeShaderMiddleman.Common.Middleman
 					enabledBitmask = enabledBitmask & passEntry.fragmentKeywordMask;
 				}
 
+				bool foundVariant = false;
 				foreach (var variant in variantEnumerator)
 				{
 					matchedVariant = variant;
-					if ((variant.keywords & enabledBitmask) == enabledBitmask)
+					if (variant.keywords == enabledBitmask)
+					{
+						foundVariant = true;
 						break;
+					}
+				}
+
+				if (!foundVariant)
+				{
+					Log("Warning: Could not find a suitable variant, using fallback!");
+				}
+				else
+				{
+					Log($"Requested keywords: {enabledBitmask}, Variant keywords: {matchedVariant.keywords}");
 				}
 
 				byte[] segment = blobs.GetSegment(matchedVariant.segment);
