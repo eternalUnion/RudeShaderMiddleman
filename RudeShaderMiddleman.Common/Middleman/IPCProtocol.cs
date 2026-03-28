@@ -90,8 +90,10 @@ namespace RudeShaderMiddleman.Common.Middleman
 				}
 			} while (readBytes < (readSecond ? 12 : 8));
 
+#if DEBUG
 			if (!writeToOutput)
 				middlemanOutputLog.Write("(SKIPPED) ");
+#endif
 
 			PrintTransmission(input == compilerPipeStream, headerBuff, readSecond ? 12 : 8);
 
@@ -156,8 +158,10 @@ namespace RudeShaderMiddleman.Common.Middleman
 				}
 			} while (readBytes < header.first);
 
+#if DEBUG
 			if (!writeToOutput)
 				middlemanOutputLog.Write("(SKIPPED) ");
+#endif
 
 			PrintTransmission(input == compilerPipeStream, buff, readBytes);
 
@@ -181,7 +185,7 @@ namespace RudeShaderMiddleman.Common.Middleman
 
 			return readBytes;
 		}
-		#endregion
+#endregion
 
 
 

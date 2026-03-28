@@ -304,7 +304,7 @@ namespace RudeShaderMiddleman.Common.Middleman
 				{
 					readBytes = ReadString(compilerPipeStream, unityPipeStream);
 					string binding = Encoding.UTF8.GetString(buff, 0, readBytes);
-					Log($" Binding = '{binding}'", LogLevel.DEBUG);
+					Log($"Binding = '{binding}'", LogLevel.DEBUG);
 
 					if (Encoding.UTF8.GetString(buff, 0, readBytes).StartsWith("shader: "))
 					{

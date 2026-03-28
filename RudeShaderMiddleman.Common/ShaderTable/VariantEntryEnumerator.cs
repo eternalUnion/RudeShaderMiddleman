@@ -28,6 +28,7 @@ namespace RudeShaderMiddleman.Common.ShaderTable
 
 		public void Dispose()
 		{
+			reader.Dispose();
 		}
 
 		public IEnumerator<VariantEntry> GetEnumerator()

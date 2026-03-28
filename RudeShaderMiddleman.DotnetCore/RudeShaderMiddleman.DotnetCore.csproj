@@ -11,6 +11,16 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
+    <DefineConstants>OS_WINDOWS</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
+    <DefineConstants>OS_LINUX</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="EasyCompressor.LZMA" Version="2.1.0" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\RudeShaderMiddleman.Common\RudeShaderMiddleman.Common.csproj" />
   </ItemGroup>

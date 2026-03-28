@@ -86,7 +86,7 @@ namespace RudeShaderMiddleman.Common.ShaderTable
 			if (variantEntry == null)
 				return null;
 
-			return new VariantEntryEnumerator(new BinaryReader(variantEntry.Open()), shaderTable.nameMap);
+			return new VariantEntryEnumerator(new BinaryReader(new BufferedStream(variantEntry.Open(), 32 * 1024)), shaderTable.nameMap);
 		}
 
 		public void RewriteShaderTable()

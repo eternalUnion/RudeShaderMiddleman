@@ -28,7 +28,14 @@ public class Program
 
 		string workingDir = Directory.GetCurrentDirectory();
 		string currentDir = Directory.GetParent(Environment.ProcessPath).FullName;
+
+#if OS_WINDOWS
+		string compilerPath = Path.Combine(currentDir, "_UnityShaderCompiler.exe");
+#elif OS_LINUX
 		string compilerPath = Path.Combine(currentDir, "_UnityShaderCompiler");
+#else
+#error Invalid OS
+#endif
 
 		if (!Directory.Exists("Logs"))
 			Directory.CreateDirectory("Logs");
@@ -136,14 +143,24 @@ public class Program
 					return compProc.ExitCode;
 				}
 
+#if OS_WINDOWS
+				string unityPipeStreamName = $"Unity-{streamName}";
+				string compilerPipeStreamName = $"Unity-shader-middleman-{procId}";
+#elif OS_LINUX
+				string unityPipeStreamName = $"/tmp/Unity-{streamName}.sock";
+				string compilerPipeStreamName = $"/tmp/Unity-{compilerStreamName}.sock";
+#else
+#error Invalid build target
+#endif
+
 				using (shaderTable = new ShaderTableFile(new ZipArchive(File.Open(tablePath, FileMode.Open, FileAccess.Read, FileShare.Read), ZipArchiveMode.Read)))
 				{
 					using (blobTable = new BlobTableFile(File.Open(blobPath, FileMode.Open, FileAccess.Read, FileShare.Read)))
 					{
-						using (unityPipeStream = new NamedPipeClientStream($"/tmp/Unity-{streamName}.sock"))
+						using (unityPipeStream = new NamedPipeClientStream(unityPipeStreamName))
 						{
 							string compilerStreamName = $"shader-middleman-{procId}";
-							using (compilerPipeStream = new NamedPipeServerStream($"/tmp/Unity-{compilerStreamName}.sock"))
+							using (compilerPipeStream = new NamedPipeServerStream(compilerPipeStreamName))
 							{
 								StartCompilerProcess(compilerStreamName);
 
