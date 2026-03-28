@@ -4,15 +4,18 @@ using RudeShadermiddleman.Common.ShaderTable;
 using System.Diagnostics;
 using System.IO.Compression;
 using System.IO.Pipes;
+using System.Net;
+using System.Net.Sockets;
 using System.Reflection;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace RudeShaderMiddleman.DotnetCore;
 
 public class Program
 {
-	// Streams
-	private static NamedPipeClientStream unityPipeStream;
+    // Streams
+    private static NamedPipeClientStream unityPipeStream;
 	private static NamedPipeServerStream compilerPipeStream;
 	private static StreamWriter middlemanOutputLog;
 
@@ -28,8 +31,11 @@ public class Program
 		int procId = Process.GetCurrentProcess().Id;
 
 		string workingDir = Directory.GetCurrentDirectory();
-		string currentDir = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-		string compilerPath = Path.Combine(currentDir, "_UnityShaderCompiler.exe");
+		string currentDir = Directory.GetParent(Environment.ProcessPath).FullName;
+		string compilerPath = Path.Combine(currentDir, "_UnityShaderCompiler");
+
+		if (!Directory.Exists("Logs"))
+			Directory.CreateDirectory("Logs");
 
 		using (middlemanOutputLog = new StreamWriter(File.Open(Path.Combine("Logs", $"middleman-{procId}.txt"), FileMode.OpenOrCreate, FileAccess.Write, FileShare.Read)))
 		{
@@ -68,7 +74,7 @@ public class Program
 				Regex ipcStreamNamePattern = new Regex("^-local-ipc-stream=(.*)");
 
 				string pluginsPath = null;
-				string streamName = null;
+				string? streamName = null;
 				bool forceLoadPlugins = false;
 
 				for (int i = 3; i < args.Length; i++)
@@ -90,14 +96,14 @@ public class Program
 					}
 				}
 
-				void StartCompilerProcess(string localStreamName)
+				void StartCompilerProcess(string? localStreamName)
 				{
 					ProcessStartInfo info = new ProcessStartInfo();
 					info.FileName = compilerPath;
 					info.WorkingDirectory = workingDir;
 
 					string compilerLogPath = Path.Combine("Logs", $"unityshader-{procId}.txt");
-					info.Arguments = $"\"{baseFolderPath}\" \"{compilerLogPath}\" {port} -local-ipc-stream={localStreamName} \"{pluginsPath}\"{(forceLoadPlugins ? " -force-plugins-load" : "")}";
+					info.Arguments = $"\"{baseFolderPath}\" \"{compilerLogPath}\" {port}{(localStreamName == null ? "" : $" -local-ipc-stream={localStreamName}")} \"{pluginsPath}\"{(forceLoadPlugins ? " -force-plugins-load" : "")}";
 					info.CreateNoWindow = true;
 					info.WindowStyle = ProcessWindowStyle.Hidden;
 
@@ -138,15 +144,24 @@ public class Program
 
 				using (blobs = new ZipArchive(File.Open(blobPath, FileMode.Open, FileAccess.Read, FileShare.Read), ZipArchiveMode.Read))
 				{
-					using (unityPipeStream = new NamedPipeClientStream($"Unity-{streamName}"))
+					using (unityPipeStream = new NamedPipeClientStream($"/tmp/Unity-{streamName}.sock"))
 					{
-						using (compilerPipeStream = new NamedPipeServerStream($"Unity-shader-middleman-{procId}"))
+						string compilerStreamName = $"shader-middleman-{procId}";
+						using (compilerPipeStream = new NamedPipeServerStream($"/tmp/Unity-{compilerStreamName}.sock"))
 						{
-							StartCompilerProcess($"shader-middleman-{procId}");
+							StartCompilerProcess(compilerStreamName);
+
 							compilerPipeStream.WaitForConnection();
+							if (!compilerPipeStream.IsConnected)
+							{
+								middlemanOutputLog.WriteLine("Failed to connect to the compiler!");
+								middlemanOutputLog.Flush();
+								return 1;
+							}
+
 							middlemanOutputLog.WriteLine("Compiler connected!");
 
-							unityPipeStream.Connect();
+							unityPipeStream.Connect(5000);
 							if (!unityPipeStream.IsConnected)
 							{
 								middlemanOutputLog.WriteLine();
@@ -189,11 +204,8 @@ public class Program
 				middlemanOutputLog.WriteLine(e.StackTrace);
 				middlemanOutputLog.Flush();
 
-				if (unityPipeStream != null)
-					unityPipeStream.Close();
-
-				if (compilerPipeStream != null)
-					compilerPipeStream.Close();
+				unityPipeStream.Dispose();
+				compilerPipeStream.Dispose();
 
 				if (compProc != null && !compProc.HasExited)
 				{

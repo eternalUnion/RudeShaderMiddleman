@@ -33,6 +33,9 @@ namespace RudeShaderMiddleman.DotnetFramework
 			string currentDir = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
 			string compilerPath = Path.Combine(currentDir, "_UnityShaderCompiler.exe");
 
+			if (!Directory.Exists("Logs"))
+				Directory.CreateDirectory("Logs");
+
 			using (middlemanOutputLog = new StreamWriter(File.Open(Path.Combine("Logs", $"middleman-{procId}.txt"), FileMode.OpenOrCreate, FileAccess.Write, FileShare.Read)))
 			{
 				middlemanOutputLog.AutoFlush = true;
