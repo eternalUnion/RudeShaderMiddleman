@@ -143,6 +143,8 @@ public class Program
 					return compProc.ExitCode;
 				}
 
+				string compilerStreamName = $"shader-middleman-{procId}";
+
 #if OS_WINDOWS
 				string unityPipeStreamName = $"Unity-{streamName}";
 				string compilerPipeStreamName = $"Unity-shader-middleman-{procId}";
@@ -159,7 +161,6 @@ public class Program
 					{
 						using (unityPipeStream = new NamedPipeClientStream(unityPipeStreamName))
 						{
-							string compilerStreamName = $"shader-middleman-{procId}";
 							using (compilerPipeStream = new NamedPipeServerStream(compilerPipeStreamName))
 							{
 								StartCompilerProcess(compilerStreamName);
